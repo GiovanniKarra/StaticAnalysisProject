@@ -6,7 +6,7 @@ This is a program I made for the final project of my **Software Verification** c
 Here's the definition of our **While** language
 
 ```
-e ::= x | n | e1 op e2 ∈ AExp
+e ::= x | n | e1 op e2 | ~e ∈ AExp
 b ::= 1 | 0 | e1 == e2 | e1 < e2 | b1 & b2 | n!b ∈ BExp
 S ::=
     x := e

@@ -8,7 +8,7 @@ use super::AbstractDomain;
 
 pub const INF: i64 = i32::MAX as i64;
 
-thread_local!(pub static INT_BOUNDS: RefCell<(i64, i64)> = RefCell::new((-INF, INF)));
+thread_local!(pub static INT_BOUNDS: RefCell<(i64, i64)> = RefCell::new((-INF+1, INF-1)));
 
 pub fn get_bounds() -> (i64, i64) {
     INT_BOUNDS.with_borrow(|(a, b)| (*a, *b))
@@ -28,14 +28,14 @@ impl Interval {
     pub fn new(a: i64, b: i64) -> Interval {
         let (m, n) = get_bounds();
         if m > n && a != b {
-            Interval::Int(-INF*1024, INF*1024)
+            Interval::Int(-INF, INF)
         } else if a > b {
             Interval::Bottom
         } else if a == b {
             Interval::Int(a, b)
         } else {
-            let l = (a < m).then_some(-INF*1024).unwrap_or(a.max(m).min(n));
-            let r = (b > n).then_some(INF*1024).unwrap_or(b.max(m).min(n));
+            let l = (a < m).then_some(-INF).unwrap_or(a.max(m).min(n));
+            let r = (b > n).then_some(INF).unwrap_or(b.max(m).min(n));
             Interval::Int(l, r)
         }
     }
@@ -58,7 +58,12 @@ impl_op_ex!(- |x: &Interval| -> Interval {
 impl_op_ex!(
 	+ |l: &Interval, r: &Interval| -> Interval {
         if let (Interval::Int(a, b), Interval::Int(c, d)) = (*l, *r) {
-            Interval::new(a+c, b+d)
+            let (m, n) = get_bounds();
+            let (l, r) = (
+                (a < m || c < m).then_some(-INF).unwrap_or(a+c),
+                (b > n || d > n).then_some(-INF).unwrap_or(b+d)
+            );
+            Interval::new(l, r)
         } else {
             Interval::Bottom
         }
@@ -74,7 +79,14 @@ impl_op_ex!(
 impl_op_ex!(
     * |l: &Interval, r: &Interval| -> Interval {
         if let (Interval::Int(a, b), Interval::Int(c, d)) = (*l, *r) {
-            let comb = [a*c, a*d, b*c, b*d];
+            let (m, n) = get_bounds();
+            // let comb = [a*c, a*d, b*c, b*d];
+            let comb = [
+                (a < m || c < m).then_some(INF*(a.signum()*c.signum())).unwrap_or(a*c),
+                (a < m || d > n).then_some(INF*(a.signum()*d.signum())).unwrap_or(a*d),
+                (c < m || b > n).then_some(INF*(c.signum()*b.signum())).unwrap_or(c*b),
+                (d > n || b > n).then_some(INF*(b.signum()*d.signum())).unwrap_or(b*d)
+            ];
             Interval::new(
                 *comb.iter().min().unwrap(),
                 *comb.iter().max().unwrap()

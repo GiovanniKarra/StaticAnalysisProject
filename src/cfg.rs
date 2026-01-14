@@ -211,7 +211,7 @@ pub fn execute<T: AbstractDomain>(prog: &str, init_state: Option<State<T>>, wid:
     };
 
     let config = ExecConfig {
-        widening_delay: wid.unwrap_or(10000),
+        widening_delay: wid.unwrap_or(interval::INF as u32),
         narrowing_steps: nar.unwrap_or(0),
         init_state
     };

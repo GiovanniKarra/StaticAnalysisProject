@@ -60,7 +60,7 @@ fn main() {
         None => std::io::stdin().read_to_string(&mut prog)
     };
 
-    interval::set_bounds(-10000, 10000);
+    // interval::set_bounds(-interval::INF, interval::INF);
     let out = match domain {
         "sign" => execute::<Sign>(&prog, None, widen, narrow),
         "interval" => {
