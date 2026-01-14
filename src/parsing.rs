@@ -169,12 +169,10 @@ pub fn parse_program<T: AbstractDomain>(prog: &str) -> Result<Option<Node<T>>, S
 
             let brack_idx = next[1..].find("{")
                 .ok_or("Shouldn't happen".to_owned())?;
-            // println!("before: {next}");
 			next = &next[brack_idx+elseblock.len()+3..];
-            // println!("after: {next}");
 
 			Node {
-				statement: Box::new(BExp::True),
+				statement: Box::new(bexp),
 				ext: NodeExtension::IfElse(ifnode.map(Box::new), elsenode.map(Box::new)),
 				..Default::default()
 			}
@@ -207,4 +205,22 @@ pub fn parse_program<T: AbstractDomain>(prog: &str) -> Result<Option<Node<T>>, S
 	});
 
 	Ok(Some(node))
+}
+
+use crate::domains::Interval;
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct StateInterval {
+    data: HashMap<String, (i64, i64)>
+}
+
+impl State<Interval> {
+    pub fn from_str(data: &str) -> Result<State<Interval>, String> {
+        let map = serde_json::from_str::<HashMap<String, (i64,i64)>>(data)
+            .map_err(|e| e.to_string())?
+            .into_iter()
+            .map(|(k, v)| (k, Interval::new(v.0, v.1)))
+            .collect();
+        Ok(State::from_map(map))
+    }
 }

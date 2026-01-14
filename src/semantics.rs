@@ -18,13 +18,15 @@ impl<T: AbstractDomain> fmt::Debug for State<T> {
 
 impl<T: AbstractDomain> fmt::Display for State<T> {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		f.write_char('{')?;
-        for (k, v) in self.iter() {
-            f.write_str(format!("{}: {}, ", k, v).as_str())?;
+        f.write_char('{')?;
+
+        for (i, (k, v)) in self.iter().enumerate() {
+            f.write_str(format!("{}: {}", k, v).as_str())?;
+            if i != self.map.len()-1 {
+                f.write_str(", ")?;
+            }
         }
-        f.write_char(8 as char)?;
-        f.write_char(8 as char)?;
-		f.write_char('}')?;
+        f.write_char('}')?;
         Ok(())
 	}
 }
@@ -34,6 +36,10 @@ impl<T: AbstractDomain> State<T> {
         State {
             map: HashMap::new()
         }
+    }
+
+    pub fn from_map(map: HashMap<String, T>) -> State<T> {
+        State { map }
     }
 
 	pub fn get(&self, var: &str) -> Option<T> {
@@ -70,7 +76,7 @@ impl<T: AbstractDomain> State<T> {
 
 pub trait StateMap {
 	type D: AbstractDomain;
-	fn apply(&mut self, state: State<Self::D>) -> State<Self::D>;
+	fn apply(&self, state: State<Self::D>) -> State<Self::D>;
 }
 
 pub trait StateReduce {
@@ -88,7 +94,7 @@ impl<T: AbstractDomain> Skip<T> {
 
 impl<T: AbstractDomain> StateMap for Skip<T> {
 	type D = T;
-	fn apply(&mut self, state: State<T>) -> State<T> {
+	fn apply(&self, state: State<T>) -> State<T> {
 		state
 	}
 }
@@ -201,7 +207,7 @@ pub enum BExp<T: AbstractDomain> {
 
 impl<T: AbstractDomain> StateMap for BExp<T> {
 	type D = T;
-	fn apply(&mut self, state: State<T>) -> State<T> {
+	fn apply(&self, state: State<T>) -> State<T> {
 		T::filter_state(state, &self)
 	}
 }
@@ -261,7 +267,7 @@ pub struct Assignment<T: AbstractDomain> {
 
 impl<T: AbstractDomain> StateMap for Assignment<T> {
 	type D = T;
-	fn apply(&mut self, mut state: State<T>) -> State<T> {
+	fn apply(&self, mut state: State<T>) -> State<T> {
 		state.set(self.var.trim().to_owned(), self.value.apply(&state));
 		state
 	}

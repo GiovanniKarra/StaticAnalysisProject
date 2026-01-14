@@ -3,26 +3,19 @@ use std::fs::File;
 use std::io::Read;
 
 use static_analysis::domains::*;
-use static_analysis::semantics::*;
-use static_analysis::parsing::*;
-use static_analysis::cfg::*;
+use static_analysis::semantics::State;
+use static_analysis::cfg::execute;
 
-
-fn execute<T: AbstractDomain>(prog: &str, init_state: Option<State<T>>) -> String {
-	let mut graph = parse_program::<T>(prog).unwrap().unwrap();
-
-	let state = init_state.unwrap_or(State::new());
-
-    let out = execute_program(prog, &mut graph, state).unwrap();
-
-    out
-}
 
 fn main() {
     let mut fd = None;
-    let mut domain = "sign";
+    let mut domain = "interval";
+    let mut narrow = None;
+    let mut widen = None;
     let mut is_file = false;
     let mut is_domain = false;
+    let mut is_narrow = false;
+    let mut is_widen = false;
     for arg in env::args() {
         if is_file {
             fd = Some(File::open(&arg)
@@ -38,12 +31,26 @@ fn main() {
             };
             is_domain = false;
         }
+        if is_widen {
+            widen = Some(arg.parse::<u32>().expect("Widening delay should be an unsigned integer"));
+            is_widen = false;
+        }
+        if is_narrow {
+            narrow = Some(arg.parse::<u32>().expect("Narrowing steps should be an unsigned integer"));
+            is_narrow = false;
+        }
 
         if arg == "--file" || arg == "-f" {
             is_file = true;
         }
         if arg == "--domain" || arg == "-d" {
             is_domain = true;
+        }
+        if arg == "--widen" || arg == "-w" {
+            is_widen = true;
+        }
+        if arg == "--narrow" || arg == "-n" {
+            is_narrow = true;
         }
     }
  
@@ -53,10 +60,21 @@ fn main() {
         None => std::io::stdin().read_to_string(&mut prog)
     };
 
-    interval::set_bounds(-64, 64);
+    interval::set_bounds(-10000, 10000);
     let out = match domain {
-        "sign" => execute::<Sign>(&prog, None),
-        "interval" => execute::<Interval>(&prog, None),
+        "sign" => execute::<Sign>(&prog, None, widen, narrow),
+        "interval" => {
+            let idx = prog.find("===").unwrap_or(0);
+            let (red_prog, init_state) = if idx == 0 {
+                (&prog[..], None)
+            } else {
+                (
+                    &prog[idx+3..],
+                    Some(State::from_str(&prog[..idx]).unwrap_or(State::new()))
+                )
+            };
+            execute::<Interval>(red_prog, init_state, widen, narrow)
+        },
         _ => panic!("Not possible to reach this point"),
     };
 

@@ -6,7 +6,7 @@ use impl_ops::*;
 use crate::semantics::*;
 use super::AbstractDomain;
 
-const INF: i64 = i64::MAX;
+pub const INF: i64 = i32::MAX as i64;
 
 thread_local!(pub static INT_BOUNDS: RefCell<(i64, i64)> = RefCell::new((-INF, INF)));
 
@@ -29,14 +29,18 @@ impl Interval {
         let (m, n) = get_bounds();
         if a > b {
             Interval::Bottom
+        } else if a == b {
+            Interval::Int(a, b)
         } else {
-            Interval::Int(a.max(m).min(n), b.max(m).min(n))
+            let l = (a <= -INF).then_some(-INF).unwrap_or(a.max(m).min(n));
+            let r = (b >= INF).then_some(INF).unwrap_or(b.max(m).min(n));
+            Interval::Int(l, r)
         }
     }
 }
 
 impl PartialOrd for Interval {
-	fn partial_cmp(&self, other: &Interval) -> Option<cmp::Ordering> {
+	fn partial_cmp(&self, _other: &Interval) -> Option<cmp::Ordering> {
         Some(cmp::Ordering::Greater)
 	}
 }
@@ -107,8 +111,10 @@ impl AbstractDomain for Interval {
 	fn union(self, other: Interval) -> Interval {
         if let (Interval::Int(a, b), Interval::Int(c, d)) = (self, other) {
             Interval::new(a.min(c), b.max(d))
+        } else if self == Interval::Bottom {
+            other
         } else {
-            Interval::Bottom
+            self
         }
 	}
 
@@ -156,6 +162,20 @@ impl AbstractDomain for Interval {
             },
         }
     }
+
+    fn widen(self, other: Interval) -> Interval {
+        if let (Interval::Int(a, b), Interval::Int(c, d)) = (self, other) {
+            let l = if a <= c { a } else { -INF };
+            let r = if d <= b { b } else { INF };
+            Interval::new(l, r)
+        } else {
+            self.union(other)
+        }
+    }
+
+    fn narrow(self, other: Interval) -> Interval {
+        self.intersect(other)
+    }
 }
 
 impl From<i64> for Interval {
@@ -167,7 +187,16 @@ impl From<i64> for Interval {
 impl fmt::Display for Interval {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Interval::Int(a, b) = *self {
-            f.write_str(format!("[{a}, {b}]").as_str())
+            let (m, n) = get_bounds();
+            let (l, r) = if a == b {
+                (a.to_string(), b.to_string())
+            } else {
+                (
+                    (a <= m).then_some("-∞".to_owned()).unwrap_or(a.to_string()),
+                    (b >= n).then_some("∞".to_owned()).unwrap_or(b.to_string())
+                )
+            };
+            f.write_str(format!("[{l}, {r}]").as_str())
         } else {
             f.write_char('∅')
         }

@@ -27,5 +27,11 @@ pub trait AbstractDomain:
 {
 	fn union(self, other: Self) -> Self;
 	fn filter_state(state: State<Self>, bexp: &BExp<Self>) -> State<Self>;
+    fn widen(self, other: Self) -> Self {
+        self.union(other)
+    }
+    fn narrow(self, other: Self) -> Self {
+        other
+    }
 }
 
