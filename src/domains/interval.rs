@@ -27,13 +27,15 @@ pub enum Interval {
 impl Interval {
     pub fn new(a: i64, b: i64) -> Interval {
         let (m, n) = get_bounds();
-        if a > b {
+        if m > n && a != b {
+            Interval::Int(-INF*1024, INF*1024)
+        } else if a > b {
             Interval::Bottom
         } else if a == b {
             Interval::Int(a, b)
         } else {
-            let l = (a <= -INF).then_some(-INF).unwrap_or(a.max(m).min(n));
-            let r = (b >= INF).then_some(INF).unwrap_or(b.max(m).min(n));
+            let l = (a < m).then_some(-INF*1024).unwrap_or(a.max(m).min(n));
+            let r = (b > n).then_some(INF*1024).unwrap_or(b.max(m).min(n));
             Interval::Int(l, r)
         }
     }

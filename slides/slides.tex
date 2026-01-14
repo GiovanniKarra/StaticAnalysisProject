@@ -1,0 +1,34 @@
+
+\documentclass{beamer}
+\usetheme{metropolis}   
+\usecolortheme{default}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+
+\title{Software Verification \\ Static Analysis Project}
+\author{Karra Giovanni - 2169942}
+\date{15 January 2026}
+
+\begin{document}
+
+\begin{frame}
+	\titlepage
+\end{frame}
+
+\begin{frame}{Tools \& Features}
+	The software has been developped in pure \textbf{Rust}, using the \href{https://iced.rs}{\color{blue}{\texttt{iced.rs}}} crate for the \textbf{GUI} part
+
+	It includes :
+	\begin{itemize}
+		\item DIY \textbf{syntax parsing} with helpful error messages
+		\item \textbf{Modular generic architecture} allowing for easy implementations of more \textbf{abstract domains}
+		\item Both a \textbf{graphical} and \textbf{command line} interface
+		\item $\text{\textbf{Int}}_{m,n}$ domain (and CLI only \textbf{Sign} domain)
+		\item Configurable \textbf{widening} and \textbf{narrowing}
+	\end{itemize}
+
+	The \textbf{codebase} is available \color{blue}{\href{https://github.com/GiovanniKarra/StaticAnalysisProject}{here}}
+\end{frame}
+
+\end{document}

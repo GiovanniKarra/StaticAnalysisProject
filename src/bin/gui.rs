@@ -107,9 +107,13 @@ impl Parameters {
         let filename_field = text_input("No File", &self.filename);
         let open_file_button = button("Open File")
             .on_press_with(|| {
+                let pwd = std::env::current_dir()
+                    .expect("No working dir??")
+                    .canonicalize()
+                    .expect("Can't canonicalize dir");
                 let filepath = rfd::FileDialog::new()
+                    .set_directory(pwd)
                     .add_filter("While files", &["while"])
-                    .set_directory(std::env::current_dir().expect("No working dir??"))
                     .pick_file();
                 let prog = filepath.clone()
                     .map(|p| std::fs::read_to_string(p).unwrap_or("File read error".to_string()))
