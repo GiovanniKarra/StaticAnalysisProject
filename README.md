@@ -19,7 +19,7 @@ S ::=
       }
       else
       {
-          S1
+          S2
       }
     | while b do
       {

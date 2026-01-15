@@ -29,14 +29,14 @@ impl Interval {
         let (m, n) = get_bounds();
         if m > n && a != b {
             Interval::Int(-INF, INF)
-        } else if a > b {
-            Interval::Bottom
-        } else if a == b {
+        }  else if a == b {
             Interval::Int(a, b)
-        } else {
+        } else if a < b {
             let l = (a < m).then_some(-INF).unwrap_or(a.max(m).min(n));
             let r = (b > n).then_some(INF).unwrap_or(b.max(m).min(n));
             Interval::Int(l, r)
+        } else {
+            Interval::Bottom
         }
     }
 }
@@ -80,7 +80,6 @@ impl_op_ex!(
     * |l: &Interval, r: &Interval| -> Interval {
         if let (Interval::Int(a, b), Interval::Int(c, d)) = (*l, *r) {
             let (m, n) = get_bounds();
-            // let comb = [a*c, a*d, b*c, b*d];
             let comb = [
                 (a < m || c < m).then_some(INF*(a.signum()*c.signum())).unwrap_or(a*c),
                 (a < m || d > n).then_some(INF*(a.signum()*d.signum())).unwrap_or(a*d),
